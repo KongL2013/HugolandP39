@@ -106,7 +106,7 @@ export const Mining: React.FC<MiningProps> = ({
         <div className="text-center text-gray-400 text-xs sm:text-sm mt-3 space-y-1">
           <p>💎 Purple gems = 1 gem | ✨ Golden gems = 1 shiny gem (5% chance)</p>
           <p>Click to mine! New gems appear automatically.</p>
-          {!gemNode && <p className="text-yellow-400">Generating new gem node...</p>}
+          {!gemNode && <p className="text-yellow-400">Generating new gem...</p>}
         </div>
       </div>
 
