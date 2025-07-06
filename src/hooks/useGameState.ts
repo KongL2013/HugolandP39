@@ -13,13 +13,13 @@ const createInitialGameState = (): GameState => ({
   shinyGems: 0,
   zone: 1,
   playerStats: {
-    hp: 100,
-    maxHp: 100,
+    hp: 300,
+    maxHp: 300,
     atk: 20,
     def: 10,
     baseAtk: 20,
     baseDef: 10,
-    baseHp: 100
+    baseHp: 300
   },
   inventory: {
     weapons: [],
@@ -592,9 +592,40 @@ const useGameState = () => {
         
         // Calculate damage with current stats (including equipment bonuses)
         const playerStats = calculatePlayerStats(newState);
-        const damage = Math.max(1, playerStats.atk - enemy.def);
-        enemy.hp = Math.max(0, enemy.hp - damage);
-        combatLog.push(`You deal ${damage} damage to ${enemy.name}!`);
+        
+        // Calculate damage based on ATK, question difficulty, and current HP
+        let baseDamage = Math.max(1, playerStats.atk - enemy.def);
+        
+        // Get question difficulty from the current question (we'll need to pass this)
+        // For now, we'll use a default multiplier and enhance this later
+        let difficultyMultiplier = 1.0; // This should be passed from the combat component
+        
+        // HP-based damage multiplier (less health = more damage)
+        // When at full health: 1.0x damage
+        // When at 50% health: 1.5x damage  
+        // When at 25% health: 2.0x damage
+        // When at 10% health: 3.0x damage
+        const healthPercentage = playerStats.hp / playerStats.maxHp;
+        let healthMultiplier = 1.0;
+        if (healthPercentage <= 0.1) {
+          healthMultiplier = 3.0;
+        } else if (healthPercentage <= 0.25) {
+          healthMultiplier = 2.0;
+        } else if (healthPercentage <= 0.5) {
+          healthMultiplier = 1.5;
+        } else if (healthPercentage <= 0.75) {
+          healthMultiplier = 1.25;
+        }
+        
+        const finalDamage = Math.floor(baseDamage * difficultyMultiplier * healthMultiplier);
+        
+        enemy.hp = Math.max(0, enemy.hp - finalDamage);
+        combatLog.push(`You deal ${finalDamage} damage to ${enemy.name}!`);
+        
+        // Add damage multiplier info if significant
+        if (healthMultiplier > 1.0) {
+          combatLog.push(`Low health damage bonus: ${Math.round((healthMultiplier - 1) * 100)}%!`);
+        }
 
         // Update knowledge streak
         newState.knowledgeStreak = {
@@ -608,7 +639,8 @@ const useGameState = () => {
         newState.statistics = {
           ...state.statistics,
           correctAnswers: state.statistics.correctAnswers + 1,
-          totalQuestionsAnswered: state.statistics.totalQuestionsAnswered + 1
+          totalQuestionsAnswered: state.statistics.totalQuestionsAnswered + 1,
+          totalDamageDealt: state.statistics.totalDamageDealt + finalDamage
         };
 
         if (category) {
@@ -628,6 +660,33 @@ const useGameState = () => {
           const coinReward = Math.floor((10 + state.zone * 5) * state.knowledgeStreak.multiplier);
           const gemReward = Math.floor((1 + Math.floor(state.zone / 5)) * state.knowledgeStreak.multiplier);
           
+          // Check for item drops from zone 10+ enemies
+          let droppedItem = null;
+          if (state.zone >= 10 && Math.random() < 0.3) { // 30% chance to drop item
+            const isWeapon = Math.random() < 0.5;
+            // Force epic or better rarity for zone 10+ drops
+            const rarities = ['epic', 'legendary', 'mythical'];
+            const weights = [60, 30, 10]; // 60% epic, 30% legendary, 10% mythical
+            const random = Math.random() * 100;
+            let rarity = 'epic';
+            let cumulative = 0;
+            
+            for (let i = 0; i < weights.length; i++) {
+              cumulative += weights[i];
+              if (random <= cumulative) {
+                rarity = rarities[i];
+                break;
+              }
+            }
+            
+            // Generate item with forced enchantment for zone 10+ drops
+            droppedItem = isWeapon 
+              ? generateWeapon(false, rarity, true) // Force enchanted
+              : generateArmor(false, rarity, true); // Force enchanted
+            
+            combatLog.push(`${enemy.name} dropped a ${droppedItem.rarity} ${isWeapon ? 'weapon' : 'armor'}!`);
+          }
+          
           newState = {
             ...newState,
             coins: state.coins + coinReward,
@@ -636,12 +695,22 @@ const useGameState = () => {
             currentEnemy: null,
             inCombat: false,
             isPremium: state.zone + 1 >= 50,
+            inventory: droppedItem ? {
+              ...newState.inventory,
+              weapons: droppedItem && 'baseAtk' in droppedItem 
+                ? [...newState.inventory.weapons, droppedItem as Weapon]
+                : newState.inventory.weapons,
+              armor: droppedItem && 'baseDef' in droppedItem
+                ? [...newState.inventory.armor, droppedItem as Armor]
+                : newState.inventory.armor
+            } : newState.inventory,
             statistics: {
               ...newState.statistics,
               totalVictories: state.statistics.totalVictories + 1,
               coinsEarned: state.statistics.coinsEarned + coinReward,
               gemsEarned: state.statistics.gemsEarned + gemReward,
-              zonesReached: Math.max(state.statistics.zonesReached, state.zone + 1)
+              zonesReached: Math.max(state.statistics.zonesReached, state.zone + 1),
+              itemsCollected: droppedItem ? state.statistics.itemsCollected + 1 : state.statistics.itemsCollected
             }
           };
           
@@ -668,7 +737,8 @@ const useGameState = () => {
         // Update statistics
         newState.statistics = {
           ...state.statistics,
-          totalQuestionsAnswered: state.statistics.totalQuestionsAnswered + 1
+          totalQuestionsAnswered: state.statistics.totalQuestionsAnswered + 1,
+          totalDamageTaken: state.statistics.totalDamageTaken + damage
         };
 
         if (category) {
