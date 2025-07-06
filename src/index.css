@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Beautiful buttons */
+.beautiful-button {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.beautiful-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.beautiful-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.beautiful-button:hover::before {
+  left: 100%;
+}
+
+/* Beautiful toggles */
+.beautiful-toggle {
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.beautiful-toggle > div {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Glass effect for beauty mode */
+.glass-effect {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Snap to grid */
+.snap-to-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+}
+
+.snap-to-grid > * {
+  grid-column: span 12;
+}
+
+/* Beauty mode enhancements */
+.beauty-mode {
+  position: relative;
+}
+
+.beauty-mode::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(255, 0, 150, 0.1) 0%, 
+    rgba(0, 255, 255, 0.1) 25%, 
+    rgba(255, 255, 0, 0.1) 50%, 
+    rgba(150, 0, 255, 0.1) 75%, 
+    rgba(255, 0, 150, 0.1) 100%);
+  background-size: 400% 400%;
+  animation: beautyGradient 8s ease infinite;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: -1;
+}
+
+@keyframes beautyGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Beautiful container */
+.beautiful-container {
+  position: relative;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Start screen animation class */
+.start-screen-animate {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+/* Enhanced button styling */
+button {
+  @apply beautiful-button;
+}
+
+/* Responsive grid improvements */
+@media (min-width: 640px) {
+  .snap-to-grid > .grid-item-sm-6 {
+    grid-column: span 6;
+  }
+  .snap-to-grid > .grid-item-sm-4 {
+    grid-column: span 4;
+  }
+  .snap-to-grid > .grid-item-sm-3 {
+    grid-column: span 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .snap-to-grid > .grid-item-lg-4 {
+    grid-column: span 4;
+  }
+  .snap-to-grid > .grid-item-lg-3 {
+    grid-column: span 3;
+  }
+  .snap-to-grid > .grid-item-lg-2 {
+    grid-column: span 2;
+  }
+}
