@@ -7,6 +7,154 @@ import AsyncStorage from '../utils/storage';
 
 const STORAGE_KEY = 'hugoland_game_state';
 
+// Adventure skills data
+const adventureSkillsData: Omit<AdventureSkill, 'id'>[] = [
+  {
+    name: 'Risker',
+    description: 'Take more damage but deal double damage',
+    type: 'risker'
+  },
+  {
+    name: 'Lightning Chain',
+    description: 'Correct answers have a chance to deal extra damage',
+    type: 'lightning_chain'
+  },
+  {
+    name: 'Skip Card',
+    description: 'Skip one question and automatically get it correct',
+    type: 'skip_card'
+  },
+  {
+    name: 'Metal Shield',
+    description: 'Reduce all incoming damage by 50%',
+    type: 'metal_shield'
+  },
+  {
+    name: 'Truth & Lies',
+    description: 'Remove one wrong answer from multiple choice questions',
+    type: 'truth_lies'
+  },
+  {
+    name: 'Ramp',
+    description: 'Each correct answer increases damage for the rest of combat',
+    type: 'ramp'
+  },
+  {
+    name: 'Dodge',
+    description: 'First wrong answer deals no damage to you',
+    type: 'dodge'
+  },
+  {
+    name: 'Berserker',
+    description: 'Deal more damage when at low health',
+    type: 'berserker'
+  },
+  {
+    name: 'Vampiric',
+    description: 'Heal for 25% of damage dealt',
+    type: 'vampiric'
+  },
+  {
+    name: 'Phoenix',
+    description: 'Revive once with 50% health when defeated',
+    type: 'phoenix'
+  },
+  {
+    name: 'Time Slow',
+    description: 'Get 50% more time to answer questions',
+    type: 'time_slow'
+  },
+  {
+    name: 'Critical Strike',
+    description: '25% chance to deal triple damage',
+    type: 'critical_strike'
+  },
+  {
+    name: 'Shield Wall',
+    description: 'Take 75% less damage for the first 3 hits',
+    type: 'shield_wall'
+  },
+  {
+    name: 'Poison Blade',
+    description: 'Attacks poison enemies, dealing damage over time',
+    type: 'poison_blade'
+  },
+  {
+    name: 'Arcane Shield',
+    description: 'Absorb the first 3 attacks completely',
+    type: 'arcane_shield'
+  },
+  {
+    name: 'Battle Frenzy',
+    description: 'Attack speed increases with each correct answer',
+    type: 'battle_frenzy'
+  },
+  {
+    name: 'Elemental Mastery',
+    description: 'Questions from different categories deal bonus damage',
+    type: 'elemental_mastery'
+  },
+  {
+    name: 'Shadow Step',
+    description: 'Avoid the next attack that would defeat you',
+    type: 'shadow_step'
+  },
+  {
+    name: 'Healing Aura',
+    description: 'Regenerate health each turn',
+    type: 'healing_aura'
+  },
+  {
+    name: 'Double Strike',
+    description: 'Each correct answer has a chance to hit twice',
+    type: 'double_strike'
+  },
+  {
+    name: 'Mana Shield',
+    description: 'Convert damage to mana, reducing actual damage taken',
+    type: 'mana_shield'
+  },
+  {
+    name: 'Berserk Rage',
+    description: 'Deal massive damage but take more damage',
+    type: 'berserk_rage'
+  },
+  {
+    name: 'Divine Protection',
+    description: 'Survive one fatal blow with 1 HP',
+    type: 'divine_protection'
+  },
+  {
+    name: 'Storm Call',
+    description: 'Lightning strikes enemies for bonus damage',
+    type: 'storm_call'
+  },
+  {
+    name: 'Blood Pact',
+    description: 'Sacrifice health to deal massive damage',
+    type: 'blood_pact'
+  },
+  {
+    name: 'Frost Armor',
+    description: 'Attackers take damage and are slowed',
+    type: 'frost_armor'
+  },
+  {
+    name: 'Fireball',
+    description: 'Correct answers have a chance to cast fireball',
+    type: 'fireball'
+  }
+];
+
+const generateRandomAdventureSkills = (): AdventureSkill[] => {
+  // Shuffle the skills array and take 3 random ones
+  const shuffled = [...adventureSkillsData].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3).map((skill, index) => ({
+    ...skill,
+    id: `adventure_skill_${Date.now()}_${index}`
+  }));
+};
+
 const createInitialGameState = (): GameState => ({
   coins: 500,
   gems: 50,
@@ -463,6 +611,11 @@ const useGameState = () => {
             merchant: {
               ...createInitialGameState().merchant,
               ...parsedState.merchant
+            },
+            // Ensure adventure skills state is properly initialized
+            adventureSkills: {
+              ...createInitialGameState().adventureSkills,
+              ...parsedState.adventureSkills
             }
           };
           
@@ -698,11 +851,50 @@ const useGameState = () => {
 
     const enemy = generateEnemy(gameState.zone);
     
+    // Generate adventure skills for selection (every adventure)
+    const availableSkills = generateRandomAdventureSkills();
+    
     updateGameState(state => ({
       ...state,
       currentEnemy: enemy,
       inCombat: true,
-      combatLog: [`You encounter ${enemy.name} in Zone ${enemy.zone}!`]
+      combatLog: [`You encounter ${enemy.name} in Zone ${enemy.zone}!`],
+      // Show adventure skill selection modal
+      adventureSkills: {
+        ...state.adventureSkills,
+        availableSkills,
+        showSelectionModal: true,
+        selectedSkill: null,
+        // Reset all skill effects for new adventure
+        skillEffects: {
+          skipCardUsed: false,
+          metalShieldUsed: false,
+          dodgeUsed: false,
+          truthLiesActive: false,
+          lightningChainActive: false,
+          rampActive: false,
+          berserkerActive: false,
+          vampiricActive: false,
+          phoenixUsed: false,
+          timeSlowActive: false,
+          criticalStrikeActive: false,
+          shieldWallActive: false,
+          poisonBladeActive: false,
+          arcaneShieldActive: false,
+          battleFrenzyActive: false,
+          elementalMasteryActive: false,
+          shadowStepUsed: false,
+          healingAuraActive: false,
+          doubleStrikeActive: false,
+          manaShieldActive: false,
+          berserkRageActive: false,
+          divineProtectionUsed: false,
+          stormCallActive: false,
+          bloodPactActive: false,
+          frostArmorActive: false,
+          fireballActive: false
+        }
+      }
     }));
   }, [gameState, updateGameState]);
 
@@ -852,6 +1044,13 @@ const useGameState = () => {
               gemsEarned: state.statistics.gemsEarned + gemReward,
               zonesReached: Math.max(state.statistics.zonesReached, state.zone + 1),
               itemsCollected: droppedItem ? state.statistics.itemsCollected + 1 : state.statistics.itemsCollected
+            },
+            // Reset adventure skills when combat ends
+            adventureSkills: {
+              ...state.adventureSkills,
+              selectedSkill: null,
+              availableSkills: [],
+              showSelectionModal: false
             }
           };
           
@@ -902,6 +1101,13 @@ const useGameState = () => {
             statistics: {
               ...newState.statistics,
               totalDeaths: state.statistics.totalDeaths + 1
+            },
+            // Reset adventure skills when combat ends
+            adventureSkills: {
+              ...state.adventureSkills,
+              selectedSkill: null,
+              availableSkills: [],
+              showSelectionModal: false
             }
           };
         }
@@ -1452,7 +1658,31 @@ const useGameState = () => {
       adventureSkills: {
         ...state.adventureSkills,
         selectedSkill: skill,
-        showSelectionModal: false
+        showSelectionModal: false,
+        // Activate skill effects based on skill type
+        skillEffects: {
+          ...state.adventureSkills.skillEffects,
+          truthLiesActive: skill.type === 'truth_lies',
+          lightningChainActive: skill.type === 'lightning_chain',
+          rampActive: skill.type === 'ramp',
+          berserkerActive: skill.type === 'berserker',
+          vampiricActive: skill.type === 'vampiric',
+          timeSlowActive: skill.type === 'time_slow',
+          criticalStrikeActive: skill.type === 'critical_strike',
+          shieldWallActive: skill.type === 'shield_wall',
+          poisonBladeActive: skill.type === 'poison_blade',
+          arcaneShieldActive: skill.type === 'arcane_shield',
+          battleFrenzyActive: skill.type === 'battle_frenzy',
+          elementalMasteryActive: skill.type === 'elemental_mastery',
+          healingAuraActive: skill.type === 'healing_aura',
+          doubleStrikeActive: skill.type === 'double_strike',
+          manaShieldActive: skill.type === 'mana_shield',
+          berserkRageActive: skill.type === 'berserk_rage',
+          stormCallActive: skill.type === 'storm_call',
+          bloodPactActive: skill.type === 'blood_pact',
+          frostArmorActive: skill.type === 'frost_armor',
+          fireballActive: skill.type === 'fireball'
+        }
       }
     }));
   }, [updateGameState]);
