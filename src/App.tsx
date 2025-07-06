@@ -5,9 +5,10 @@ import { Shop } from './components/Shop';
 import { Inventory } from './components/Inventory';
 import { PlayerStats } from './components/PlayerStats';
 import { Mining } from './components/Mining';
+import { Merchant } from './components/Merchant';
 import { FloatingIcons } from './components/FloatingIcons';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
-import { Shield, Package, User, Play, RotateCcw, Crown, Gift, Pickaxe, Menu, ArrowLeft } from 'lucide-react';
+import { Shield, Package, User, Play, RotateCcw, Crown, Gift, Pickaxe, Menu, ArrowLeft, Store } from 'lucide-react';
 import { animateButtonClick, initGSAPAnimations } from './utils/gsapAnimations';
 
 // Lazy load heavy components
@@ -32,7 +33,7 @@ import {
   LazyAdventureSkillSelection
 } from './components/LazyComponents';
 
-type GameView = 'stats' | 'shop' | 'inventory' | 'mining' | 'menu';
+type GameView = 'stats' | 'shop' | 'inventory' | 'mining' | 'merchant' | 'menu';
 type ModalView = 'collection' | 'gameMode' | 'pokyegMarket' | 'tutorial' | 'cheats' | 'resetConfirm' | 'dailyRewards' | 'offlineProgress' | 'bulkActions' | null;
 
 // Loading component for Suspense fallback
@@ -88,6 +89,8 @@ function App() {
     selectAdventureSkill,
     skipAdventureSkills,
     useSkipCard,
+    spendFragments,
+    selectMerchantReward,
   } = useGameState();
 
   const [currentView, setCurrentView] = useState<GameView>('stats');
@@ -455,6 +458,14 @@ function App() {
             onExchangeShinyGems={exchangeShinyGems}
           />
         );
+      case 'merchant':
+        return (
+          <Merchant
+            merchant={gameState.merchant}
+            onSpendFragments={spendFragments}
+            onSelectReward={selectMerchantReward}
+          />
+        );
       default:
         return null;
     }
@@ -654,12 +665,13 @@ function App() {
           {/* Navigation - Disable during combat and hide on menu page */}
           {currentView !== 'menu' && (
             <nav className="flex justify-center">
-              <div className="flex space-x-1 sm:space-x-2 bg-black/20 p-1 sm:p-2 rounded-xl backdrop-blur-sm border border-white/10">
+              <div className="flex space-x-1 sm:space-x-2 bg-black/20 p-1 sm:p-2 rounded-xl backdrop-blur-sm border border-white/10 overflow-x-auto">
                 {[
                   { id: 'stats', label: 'Hero', icon: User },
                   { id: 'shop', label: 'Shop', icon: Package },
                   { id: 'inventory', label: 'Inventory', icon: Shield },
                   { id: 'mining', label: 'Mining', icon: Pickaxe },
+                  { id: 'merchant', label: 'Merchant', icon: Store },
                 ].map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}

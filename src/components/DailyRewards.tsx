@@ -36,7 +36,7 @@ export const DailyRewards: React.FC<DailyRewardsProps> = ({
       day,
       coins: baseCoins,
       gems: baseGems,
-      special: day === 7 ? 'Legendary Chest' : day === 14 ? 'Mythical Item' : undefined,
+      special: day === 5 ? 'Legendary Chest' : undefined,
       claimed: false
     };
   };
@@ -118,15 +118,15 @@ export const DailyRewards: React.FC<DailyRewardsProps> = ({
           </div>
         )}
 
-        {/* Reward Calendar */}
+        {/* Reward Calendar - Only show 5 days */}
         <div className="bg-black/30 p-4 rounded-lg">
           <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5" />
             Reward Calendar
           </h3>
           
-          <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 14 }, (_, i) => {
+          <div className="grid grid-cols-5 gap-2">
+            {Array.from({ length: 5 }, (_, i) => {
               const day = i + 1;
               const reward = getDayReward(day);
               const isClaimed = dailyRewards.rewardHistory.some(r => r.day === day && r.claimed);
@@ -136,7 +136,7 @@ export const DailyRewards: React.FC<DailyRewardsProps> = ({
               return (
                 <div
                   key={day}
-                  className={`p-2 rounded-lg border-2 text-center ${
+                  className={`p-2 sm:p-3 rounded-lg border-2 text-center ${
                     isClaimed
                       ? 'bg-green-900/50 border-green-500/50'
                       : isCurrent

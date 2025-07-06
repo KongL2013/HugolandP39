@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { GameState, Weapon, Armor, Enemy, ChestReward, Achievement, PlayerTag, DailyReward, MenuSkill, AdventureSkill } from '../types/game';
+import { GameState, Weapon, Armor, Enemy, ChestReward, Achievement, PlayerTag, DailyReward, MenuSkill, AdventureSkill, MerchantReward } from '../types/game';
 import { generateWeapon, generateArmor, generateEnemy, getChestRarityWeights, generateRelicItem, generateMythicalWeapon, generateMythicalArmor } from '../utils/gameUtils';
 import { checkAchievements, initializeAchievements } from '../utils/achievements';
 import { checkPlayerTags, initializePlayerTags } from '../utils/playerTags';
@@ -200,6 +200,13 @@ const createInitialGameState = (): GameState => ({
     atk: 1,
     def: 1,
     hp: 1
+  },
+  merchant: {
+    hugollandFragments: 0,
+    totalFragmentsEarned: 0,
+    lastFragmentZone: 0,
+    showRewardModal: false,
+    availableRewards: []
   }
 });
 
@@ -312,6 +319,125 @@ const useGameState = () => {
     return newState;
   }, []);
 
+  // Generate merchant rewards
+  const generateMerchantRewards = useCallback((): MerchantReward[] => {
+    const rewards: MerchantReward[] = [];
+    
+    // Item reward (legendary, mythical, or relic)
+    const itemType = Math.random();
+    if (itemType < 0.4) {
+      // Legendary/Mythical weapon or armor
+      const isWeapon = Math.random() < 0.5;
+      const rarity = Math.random() < 0.6 ? 'legendary' : 'mythical';
+      const item = isWeapon ? generateWeapon(false, rarity, true) : generateArmor(false, rarity, true);
+      rewards.push({
+        id: 'item',
+        type: 'item',
+        name: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${isWeapon ? 'Weapon' : 'Armor'}`,
+        description: `A powerful ${rarity} ${isWeapon ? 'weapon' : 'armor'} with guaranteed enchantment`,
+        icon: isWeapon ? '⚔️' : '🛡️',
+        item
+      });
+    } else {
+      // Relic item
+      const relic = generateRelicItem();
+      rewards.push({
+        id: 'relic',
+        type: 'item',
+        name: 'Ancient Relic',
+        description: 'A powerful relic from ancient times',
+        icon: '🏺',
+        item: relic
+      });
+    }
+    
+    // Coins reward
+    rewards.push({
+      id: 'coins',
+      type: 'coins',
+      name: 'Treasure Chest',
+      description: 'A substantial amount of coins',
+      icon: '💰',
+      coins: Math.floor(5000 + Math.random() * 10000)
+    });
+    
+    // Gems reward
+    rewards.push({
+      id: 'gems',
+      type: 'gems',
+      name: 'Gem Cache',
+      description: 'A collection of precious gems',
+      icon: '💎',
+      gems: Math.floor(200 + Math.random() * 300)
+    });
+    
+    // XP reward
+    rewards.push({
+      id: 'xp',
+      type: 'xp',
+      name: 'Knowledge Tome',
+      description: 'Gain a large amount of experience',
+      icon: '📚',
+      xp: Math.floor(1000 + Math.random() * 2000)
+    });
+    
+    // Health multiplier
+    rewards.push({
+      id: 'health',
+      type: 'health',
+      name: 'Vitality Boost',
+      description: 'Triple your maximum health permanently',
+      icon: '❤️',
+      healthMultiplier: 3
+    });
+    
+    // Attack multiplier
+    rewards.push({
+      id: 'attack',
+      type: 'attack',
+      name: 'Power Enhancement',
+      description: 'Double your attack power permanently',
+      icon: '⚔️',
+      attackMultiplier: 2
+    });
+    
+    // Free menu skill
+    const skillTypes = [
+      'coin_vacuum', 'treasurer', 'xp_surge', 'luck_gem', 'enchanter',
+      'time_warp', 'golden_touch', 'knowledge_boost', 'durability_master',
+      'relic_finder', 'stat_amplifier', 'question_master', 'gem_magnet',
+      'streak_guardian', 'revival_blessing', 'zone_skipper', 'item_duplicator',
+      'research_accelerator', 'garden_booster', 'market_refresh'
+    ];
+    const randomType = skillTypes[Math.floor(Math.random() * skillTypes.length)] as MenuSkill['type'];
+    const duration = Math.floor(Math.random() * 8) + 4; // 4-12 hours
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + duration * 60 * 60 * 1000);
+    
+    const skill: MenuSkill = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: randomType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+      description: `A powerful skill that lasts ${duration} hours`,
+      duration,
+      activatedAt: now,
+      expiresAt,
+      type: randomType
+    };
+    
+    rewards.push({
+      id: 'skill',
+      type: 'skill',
+      name: 'Menu Skill',
+      description: `Get a free ${skill.name} skill`,
+      icon: '✨',
+      skill
+    });
+    
+    // Randomly select 3 rewards
+    const shuffled = rewards.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  }, []);
+
   // Load game state from storage
   useEffect(() => {
     const loadGameState = async () => {
@@ -333,6 +459,10 @@ const useGameState = () => {
               ...createInitialGameState().offlineProgress,
               ...parsedState.offlineProgress,
               lastSaveTime: new Date(parsedState.offlineProgress?.lastSaveTime || Date.now())
+            },
+            merchant: {
+              ...createInitialGameState().merchant,
+              ...parsedState.merchant
             }
           };
           
@@ -590,10 +720,8 @@ const useGameState = () => {
         // Player hits enemy - reduce equipment durability
         newState = reduceDurability(newState, 1);
         
-        // Calculate damage with current stats (including equipment bonuses)
-        const playerStats = calculatePlayerStats(newState);
-        
         // Calculate damage based on ATK, question difficulty, and current HP
+        const playerStats = calculatePlayerStats(newState);
         let baseDamage = Math.max(1, playerStats.atk - enemy.def);
         
         // Get question difficulty from the current question (we'll need to pass this)
@@ -660,6 +788,13 @@ const useGameState = () => {
           const coinReward = Math.floor((10 + state.zone * 5) * state.knowledgeStreak.multiplier);
           const gemReward = Math.floor((1 + Math.floor(state.zone / 5)) * state.knowledgeStreak.multiplier);
           
+          // Check for Hugoland fragment reward (every 5 zones)
+          let fragmentReward = 0;
+          if (state.zone % 5 === 0 && state.zone > state.merchant.lastFragmentZone) {
+            fragmentReward = 1;
+            combatLog.push(`You found a Hugoland Fragment! (${state.merchant.hugollandFragments + 1}/5)`);
+          }
+          
           // Check for item drops from zone 10+ enemies
           let droppedItem = null;
           if (state.zone >= 10 && Math.random() < 0.3) { // 30% chance to drop item
@@ -695,6 +830,12 @@ const useGameState = () => {
             currentEnemy: null,
             inCombat: false,
             isPremium: state.zone + 1 >= 50,
+            merchant: {
+              ...state.merchant,
+              hugollandFragments: state.merchant.hugollandFragments + fragmentReward,
+              totalFragmentsEarned: state.merchant.totalFragmentsEarned + fragmentReward,
+              lastFragmentZone: fragmentReward > 0 ? state.zone : state.merchant.lastFragmentZone
+            },
             inventory: droppedItem ? {
               ...newState.inventory,
               weapons: droppedItem && 'baseAtk' in droppedItem 
@@ -773,6 +914,79 @@ const useGameState = () => {
       };
     });
   }, [gameState, updateGameState, reduceDurability, calculatePlayerStats]);
+
+  // Merchant functions
+  const spendFragments = useCallback((): boolean => {
+    if (!gameState || gameState.merchant.hugollandFragments < 5) return false;
+
+    const rewards = generateMerchantRewards();
+    
+    updateGameState(state => ({
+      ...state,
+      merchant: {
+        ...state.merchant,
+        hugollandFragments: state.merchant.hugollandFragments - 5,
+        showRewardModal: true,
+        availableRewards: rewards
+      }
+    }));
+
+    return true;
+  }, [gameState, updateGameState, generateMerchantRewards]);
+
+  const selectMerchantReward = useCallback((reward: MerchantReward) => {
+    updateGameState(state => {
+      let newState = { ...state };
+
+      switch (reward.type) {
+        case 'item':
+          if (reward.item) {
+            if ('baseAtk' in reward.item) {
+              // Weapon
+              newState.inventory.weapons = [...newState.inventory.weapons, reward.item as Weapon];
+            } else if ('baseDef' in reward.item) {
+              // Armor
+              newState.inventory.armor = [...newState.inventory.armor, reward.item as Armor];
+            } else {
+              // Relic
+              newState.inventory.relics = [...newState.inventory.relics, reward.item as RelicItem];
+            }
+          }
+          break;
+        case 'coins':
+          newState.coins += reward.coins || 0;
+          break;
+        case 'gems':
+          newState.gems += reward.gems || 0;
+          break;
+        case 'xp':
+          newState.progression.experience += reward.xp || 0;
+          break;
+        case 'health':
+          newState.playerStats.baseHp = Math.floor(newState.playerStats.baseHp * (reward.healthMultiplier || 1));
+          newState.playerStats.maxHp = Math.floor(newState.playerStats.maxHp * (reward.healthMultiplier || 1));
+          newState.playerStats.hp = newState.playerStats.maxHp; // Full heal
+          break;
+        case 'attack':
+          newState.playerStats.baseAtk = Math.floor(newState.playerStats.baseAtk * (reward.attackMultiplier || 1));
+          break;
+        case 'skill':
+          if (reward.skill) {
+            newState.skills.activeMenuSkill = reward.skill;
+          }
+          break;
+      }
+
+      return {
+        ...newState,
+        merchant: {
+          ...newState.merchant,
+          showRewardModal: false,
+          availableRewards: []
+        }
+      };
+    });
+  }, [updateGameState]);
 
   // Game management functions
   const resetGame = useCallback(() => {
@@ -1309,6 +1523,8 @@ const useGameState = () => {
     selectAdventureSkill,
     skipAdventureSkills,
     useSkipCard,
+    spendFragments,
+    selectMerchantReward,
   };
 };
 

@@ -28,6 +28,7 @@ export interface GameState {
   adventureSkills: AdventureSkillsState;
   research: ResearchSystem;
   multipliers: Multipliers;
+  merchant: MerchantSystem;
 }
 
 export interface PlayerStats {
@@ -375,4 +376,27 @@ export interface Multipliers {
   atk: number;
   def: number;
   hp: number;
+}
+
+export interface MerchantSystem {
+  hugollandFragments: number;
+  totalFragmentsEarned: number;
+  lastFragmentZone: number;
+  showRewardModal: boolean;
+  availableRewards: MerchantReward[];
+}
+
+export interface MerchantReward {
+  id: string;
+  type: 'item' | 'coins' | 'gems' | 'xp' | 'health' | 'attack' | 'skill';
+  name: string;
+  description: string;
+  icon: string;
+  item?: Weapon | Armor | RelicItem;
+  coins?: number;
+  gems?: number;
+  xp?: number;
+  healthMultiplier?: number;
+  attackMultiplier?: number;
+  skill?: MenuSkill;
 }
