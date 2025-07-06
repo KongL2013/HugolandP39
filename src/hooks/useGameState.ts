@@ -7,21 +7,21 @@ import AsyncStorage from '../utils/storage';
 
 const STORAGE_KEY = 'hugoland_game_state';
 
-// Adventure skills data
+// Adventure Skills Data
 const adventureSkillsData: Omit<AdventureSkill, 'id'>[] = [
   {
     name: 'Risker',
-    description: 'Take more damage but deal double damage',
+    description: 'Take more damage but deal significantly more damage',
     type: 'risker'
   },
   {
     name: 'Lightning Chain',
-    description: 'Correct answers have a chance to deal extra damage',
+    description: 'Correct answers have a chance to deal double damage',
     type: 'lightning_chain'
   },
   {
     name: 'Skip Card',
-    description: 'Skip one question and automatically get it correct',
+    description: 'Use once to automatically answer a question correctly',
     type: 'skip_card'
   },
   {
@@ -30,7 +30,7 @@ const adventureSkillsData: Omit<AdventureSkill, 'id'>[] = [
     type: 'metal_shield'
   },
   {
-    name: 'Truth & Lies',
+    name: 'Truth and Lies',
     description: 'Remove one wrong answer from multiple choice questions',
     type: 'truth_lies'
   },
@@ -76,7 +76,7 @@ const adventureSkillsData: Omit<AdventureSkill, 'id'>[] = [
   },
   {
     name: 'Poison Blade',
-    description: 'Attacks poison enemies, dealing damage over time',
+    description: 'Enemies take damage over time after being hit',
     type: 'poison_blade'
   },
   {
@@ -91,27 +91,27 @@ const adventureSkillsData: Omit<AdventureSkill, 'id'>[] = [
   },
   {
     name: 'Elemental Mastery',
-    description: 'Questions from different categories deal bonus damage',
+    description: 'Different question categories give different bonuses',
     type: 'elemental_mastery'
   },
   {
     name: 'Shadow Step',
-    description: 'Avoid the next attack that would defeat you',
+    description: 'Avoid the next attack after answering correctly',
     type: 'shadow_step'
   },
   {
     name: 'Healing Aura',
-    description: 'Regenerate health each turn',
+    description: 'Slowly regenerate health during combat',
     type: 'healing_aura'
   },
   {
     name: 'Double Strike',
-    description: 'Each correct answer has a chance to hit twice',
+    description: 'Correct answers have a chance to hit twice',
     type: 'double_strike'
   },
   {
     name: 'Mana Shield',
-    description: 'Convert damage to mana, reducing actual damage taken',
+    description: 'Convert some damage to mana instead of health',
     type: 'mana_shield'
   },
   {
@@ -121,33 +121,32 @@ const adventureSkillsData: Omit<AdventureSkill, 'id'>[] = [
   },
   {
     name: 'Divine Protection',
-    description: 'Survive one fatal blow with 1 HP',
+    description: 'Immune to damage for the first 5 seconds',
     type: 'divine_protection'
   },
   {
     name: 'Storm Call',
-    description: 'Lightning strikes enemies for bonus damage',
+    description: 'Lightning strikes enemies periodically',
     type: 'storm_call'
   },
   {
     name: 'Blood Pact',
-    description: 'Sacrifice health to deal massive damage',
+    description: 'Sacrifice health to deal more damage',
     type: 'blood_pact'
   },
   {
     name: 'Frost Armor',
-    description: 'Attackers take damage and are slowed',
+    description: 'Attackers are slowed and take damage',
     type: 'frost_armor'
   },
   {
     name: 'Fireball',
-    description: 'Correct answers have a chance to cast fireball',
+    description: 'Correct answers launch fireballs for extra damage',
     type: 'fireball'
   }
 ];
 
 const generateRandomAdventureSkills = (): AdventureSkill[] => {
-  // Shuffle the skills array and take 3 random ones
   const shuffled = [...adventureSkillsData].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, 3).map((skill, index) => ({
     ...skill,
@@ -611,11 +610,6 @@ const useGameState = () => {
             merchant: {
               ...createInitialGameState().merchant,
               ...parsedState.merchant
-            },
-            // Ensure adventure skills state is properly initialized
-            adventureSkills: {
-              ...createInitialGameState().adventureSkills,
-              ...parsedState.adventureSkills
             }
           };
           
@@ -850,22 +844,18 @@ const useGameState = () => {
     if (!gameState) return;
 
     const enemy = generateEnemy(gameState.zone);
-    
-    // Generate adventure skills for selection (every adventure)
     const availableSkills = generateRandomAdventureSkills();
     
     updateGameState(state => ({
       ...state,
       currentEnemy: enemy,
-      inCombat: true,
+      inCombat: false, // Keep false until skill is selected
       combatLog: [`You encounter ${enemy.name} in Zone ${enemy.zone}!`],
-      // Show adventure skill selection modal
       adventureSkills: {
         ...state.adventureSkills,
         availableSkills,
         showSelectionModal: true,
         selectedSkill: null,
-        // Reset all skill effects for new adventure
         skillEffects: {
           skipCardUsed: false,
           metalShieldUsed: false,
@@ -1045,12 +1035,40 @@ const useGameState = () => {
               zonesReached: Math.max(state.statistics.zonesReached, state.zone + 1),
               itemsCollected: droppedItem ? state.statistics.itemsCollected + 1 : state.statistics.itemsCollected
             },
-            // Reset adventure skills when combat ends
+            // Reset adventure skills after combat
             adventureSkills: {
               ...state.adventureSkills,
               selectedSkill: null,
               availableSkills: [],
-              showSelectionModal: false
+              showSelectionModal: false,
+              skillEffects: {
+                skipCardUsed: false,
+                metalShieldUsed: false,
+                dodgeUsed: false,
+                truthLiesActive: false,
+                lightningChainActive: false,
+                rampActive: false,
+                berserkerActive: false,
+                vampiricActive: false,
+                phoenixUsed: false,
+                timeSlowActive: false,
+                criticalStrikeActive: false,
+                shieldWallActive: false,
+                poisonBladeActive: false,
+                arcaneShieldActive: false,
+                battleFrenzyActive: false,
+                elementalMasteryActive: false,
+                shadowStepUsed: false,
+                healingAuraActive: false,
+                doubleStrikeActive: false,
+                manaShieldActive: false,
+                berserkRageActive: false,
+                divineProtectionUsed: false,
+                stormCallActive: false,
+                bloodPactActive: false,
+                frostArmorActive: false,
+                fireballActive: false
+              }
             }
           };
           
@@ -1102,12 +1120,40 @@ const useGameState = () => {
               ...newState.statistics,
               totalDeaths: state.statistics.totalDeaths + 1
             },
-            // Reset adventure skills when combat ends
+            // Reset adventure skills after combat
             adventureSkills: {
               ...state.adventureSkills,
               selectedSkill: null,
               availableSkills: [],
-              showSelectionModal: false
+              showSelectionModal: false,
+              skillEffects: {
+                skipCardUsed: false,
+                metalShieldUsed: false,
+                dodgeUsed: false,
+                truthLiesActive: false,
+                lightningChainActive: false,
+                rampActive: false,
+                berserkerActive: false,
+                vampiricActive: false,
+                phoenixUsed: false,
+                timeSlowActive: false,
+                criticalStrikeActive: false,
+                shieldWallActive: false,
+                poisonBladeActive: false,
+                arcaneShieldActive: false,
+                battleFrenzyActive: false,
+                elementalMasteryActive: false,
+                shadowStepUsed: false,
+                healingAuraActive: false,
+                doubleStrikeActive: false,
+                manaShieldActive: false,
+                berserkRageActive: false,
+                divineProtectionUsed: false,
+                stormCallActive: false,
+                bloodPactActive: false,
+                frostArmorActive: false,
+                fireballActive: false
+              }
             }
           };
         }
@@ -1658,32 +1704,9 @@ const useGameState = () => {
       adventureSkills: {
         ...state.adventureSkills,
         selectedSkill: skill,
-        showSelectionModal: false,
-        // Activate skill effects based on skill type
-        skillEffects: {
-          ...state.adventureSkills.skillEffects,
-          truthLiesActive: skill.type === 'truth_lies',
-          lightningChainActive: skill.type === 'lightning_chain',
-          rampActive: skill.type === 'ramp',
-          berserkerActive: skill.type === 'berserker',
-          vampiricActive: skill.type === 'vampiric',
-          timeSlowActive: skill.type === 'time_slow',
-          criticalStrikeActive: skill.type === 'critical_strike',
-          shieldWallActive: skill.type === 'shield_wall',
-          poisonBladeActive: skill.type === 'poison_blade',
-          arcaneShieldActive: skill.type === 'arcane_shield',
-          battleFrenzyActive: skill.type === 'battle_frenzy',
-          elementalMasteryActive: skill.type === 'elemental_mastery',
-          healingAuraActive: skill.type === 'healing_aura',
-          doubleStrikeActive: skill.type === 'double_strike',
-          manaShieldActive: skill.type === 'mana_shield',
-          berserkRageActive: skill.type === 'berserk_rage',
-          stormCallActive: skill.type === 'storm_call',
-          bloodPactActive: skill.type === 'blood_pact',
-          frostArmorActive: skill.type === 'frost_armor',
-          fireballActive: skill.type === 'fireball'
-        }
-      }
+        showSelectionModal: false
+      },
+      inCombat: true // Start combat after skill selection
     }));
   }, [updateGameState]);
 
@@ -1694,7 +1717,8 @@ const useGameState = () => {
         ...state.adventureSkills,
         selectedSkill: null,
         showSelectionModal: false
-      }
+      },
+      inCombat: true // Start combat after skipping skills
     }));
   }, [updateGameState]);
 
