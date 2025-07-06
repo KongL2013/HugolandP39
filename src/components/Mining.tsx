@@ -39,7 +39,7 @@ export const Mining: React.FC<MiningProps> = ({
       
       // Generate a new node after a short delay
       setTimeout(() => {
-        const isShiny = Math.random() < 0.05;
+        const isShiny = Math.random() < 0;
         setGemNode({ isShiny });
       }, 500);
     }
