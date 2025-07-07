@@ -48,15 +48,16 @@ const enemyNames = [
   'Eternal Guardian', 'Void Emperor', 'Chaos Incarnate', 'Reality Destroyer'
 ];
 
+// Increased durability by 50% - multiply base values by 1.5
 const getDurabilityByRarity = (rarity: string): number => {
   const durabilityMap = {
-    common: 50,
-    rare: 75,
-    epic: 100,
-    legendary: 150,
-    mythical: 200
+    common: 75,    // was 50
+    rare: 113,     // was 75
+    epic: 150,     // was 100
+    legendary: 225, // was 150
+    mythical: 300   // was 200
   };
-  return durabilityMap[rarity as keyof typeof durabilityMap] || 50;
+  return durabilityMap[rarity as keyof typeof durabilityMap] || 75;
 };
 
 export const generateWeapon = (forceChroma = false, forceRarity?: string, forceEnchanted = false): Weapon => {
